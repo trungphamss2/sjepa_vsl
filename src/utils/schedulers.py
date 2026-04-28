@@ -1,0 +1,88 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import math
+
+
+
+class WarmupCosineSchedule(object):
+
+    def __init__(self, optimizer, warmup_steps, start_lr, ref_lr, T_max, last_epoch=-1, final_lr=0.0):
+        self.optimizer = optimizer
+        self.start_lr = start_lr
+        self.ref_lr = ref_lr
+        self.final_lr = final_lr
+        self.warmup_steps = warmup_steps
+        self.T_max = T_max - warmup_steps
+        self._step = 0.0
+
+    def step(self):
+        self._step += 1
+        if self._step < self.warmup_steps:
+            progress = float(self._step) / float(max(1, self.warmup_steps))
+            new_lr = self.start_lr + progress * (self.ref_lr - self.start_lr)
+        else:
+            # -- progress after warmup
+            progress = float(self._step - self.warmup_steps) / float(max(1, self.T_max))
+            new_lr = max(
+                self.final_lr,
+                self.final_lr + (self.ref_lr - self.final_lr) * 0.5 * (1.0 + math.cos(math.pi * progress)),
+            )
+
+        for group in self.optimizer.param_groups:
+            # Lưu lại mốc LR gốc của từng Group (Ví dụ: Encoder 4e-5, Head 4e-3)
+            if "base_lr" not in group:
+                group["base_lr"] = group["lr"]
+            
+            # Tính tỷ lệ scale (Từ 0.0 lên 1.0 rồi giảm dần)
+            scale = new_lr / self.ref_lr
+            
+            # Nhân tỷ lệ chung này cho mức LR gốc của từng Group riêng biệt
+            group["lr"] = group["base_lr"] * scale
+
+        return new_lr
+
+    def state_dict(self):
+        """Returns the state of the scheduler as a dict."""
+        return {key: value for key, value in self.__dict__.items() if key != "optimizer"}
+
+    def load_state_dict(self, state_dict):
+        """Loads the schedulers state."""
+        self.__dict__.update(state_dict)
+
+
+class CosineWDSchedule(object):
+
+    def __init__(self, optimizer, ref_wd, T_max, final_wd=0.0):
+        self.optimizer = optimizer
+        self.ref_wd = ref_wd
+        self.final_wd = final_wd
+        self.T_max = T_max
+        self._step = 0.0
+
+    def step(self):
+        self._step += 1
+        progress = self._step / self.T_max
+        new_wd = self.final_wd + (self.ref_wd - self.final_wd) * 0.5 * (1.0 + math.cos(math.pi * progress))
+
+        if self.final_wd <= self.ref_wd:
+            new_wd = max(self.final_wd, new_wd)
+        else:
+            new_wd = min(self.final_wd, new_wd)
+
+        for group in self.optimizer.param_groups:
+            if ("WD_exclude" not in group) or not group["WD_exclude"]:
+                group["weight_decay"] = new_wd
+        return new_wd
+
+    def state_dict(self):
+        """Returns the state of the scheduler as a dict."""
+        return {key: value for key, value in self.__dict__.items() if key != "optimizer"}
+
+    def load_state_dict(self, state_dict):
+        """Loads the schedulers state."""
+        self.__dict__.update(state_dict)
+
+

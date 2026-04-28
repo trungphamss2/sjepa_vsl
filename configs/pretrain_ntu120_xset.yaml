@@ -1,0 +1,45 @@
+# S-JEPA Pre-training — NTU-120 | X-Set Protocol
+# Pre-train CHỈ trên TRAINING SPLIT của NTU-120 X-Set
+# Tránh data leak: Setup ID lẻ (test setups) không được nhìn thấy trong pre-train
+task: "S-JEPA Pre-training — NTU-120 XSet"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"     # NTU-60 (A001-A060)
+    - "./DATA/nturgb+d120_skeletons"  # NTU-120 (A001-A120)
+  max_frames: 120
+  mask_ratio: 0.9
+  segment_length: 4
+  protocol: "xset"       # Chỉ dùng Setup ID chẵn (training setups)
+  num_classes: 120       # Giữ toàn bộ 120 actions
+
+model:
+  name: "sjepa_base"
+  input_dim: 75
+  embed_dim: 256
+  depth: 8
+  num_heads: 8
+  segment_length: 4
+  num_targets: 4
+  temp_s: 0.1
+  temp_t: 0.06
+
+training:
+  epochs: 300
+  batch_size: 64
+  grad_accum_steps: 4    # Effective batch size = 256 (32 x 8)
+  lr: 0.001
+  weight_decay: 0.05
+  weight_decay_final: 0.05
+  grad_clip: 0.3
+  warmup_epochs: 20
+  save_every: 20
+  checkpoint_dir: "checkpoints/pretrain_ntu120_xset"
+
+wandb:
+  project: "sjepa-pretrain"
+  name: "pretrain_NTU120_XSet"
+
+training_options:
+  resume: false

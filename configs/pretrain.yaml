@@ -1,0 +1,45 @@
+# S-JEPA Pre-training Configuration — DEFAULT (template)
+# Dùng file này làm tham chiếu. Để chạy thực tế, dùng các file:
+#   pretrain_ntu60_xsub.yaml / pretrain_ntu60_xview.yaml
+#   pretrain_ntu120_xsub.yaml / pretrain_ntu120_xset.yaml
+task: "S-JEPA Pre-training — NTU-60 XSub"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"
+  max_frames: 120
+  mask_ratio: 0.9       # Segment-based masking, l=4, r=0.9
+  segment_length: 4
+  protocol: "xsub"
+  num_classes: 60
+
+model:
+  name: "sjepa_base"
+  input_dim: 75
+  embed_dim: 256         # C_e = 256 — đúng bài báo
+  depth: 8               # L_e = 8  — đúng bài báo
+  num_heads: 8
+  segment_length: 4
+  num_targets: 4
+  temp_s: 0.1
+  temp_t: 0.06
+
+training:
+  epochs: 300
+  batch_size: 64
+  grad_accum_steps: 4    # Effective batch size = 256
+  lr: 0.001
+  weight_decay: 0.05
+  weight_decay_final: 0.05
+  grad_clip: 0.3
+  warmup_epochs: 20
+  save_every: 20
+  checkpoint_dir: "checkpoints/pretrain_ntu60_xsub"
+
+wandb:
+  project: "sjepa-pretrain"
+  name: "pretrain_NTU60_XSub"
+
+training_options:
+  resume: false

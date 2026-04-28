@@ -1,0 +1,44 @@
+# S-JEPA Pretrain — NTU-120 Foundation | Target: NTU-60 X-View
+task: "NTU-120 S-JEPA Pretraining"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"      # Chứa A001 đến A060
+    - "./DATA/nturgb+d120_skeletons"   # Chứa tiếp A061 đến A120
+  max_frames: 120
+  mask_ratio: 0.9
+  segment_length: 4
+  protocol: "xview"                 # QUAN TRỌNG: Lọc bỏ Camera C001 (Test set) để chống rò rỉ dữ liệu
+  num_classes: 120                 # Học từ toàn bộ 120 lớp hành động
+  modality: "joint"
+
+model:
+  name: "sjepa_base"
+  input_dim: 75
+  embed_dim: 256
+  depth: 8                         # L_e = 8
+  num_heads: 8
+  segment_length: 4
+  num_targets: 4
+  temp_s: 0.1
+  temp_t: 0.06
+
+training:
+  epochs: 400                      # 400 Ep NTU-120
+  batch_size: 64
+  grad_accum_steps: 4
+  lr: 0.001
+  weight_decay: 0.05
+  weight_decay_final: 0.05
+  grad_clip: 0.3
+  warmup_epochs: 20
+  save_every: 50
+  checkpoint_dir: "checkpoints/pretrain_ntu120_foundation"
+
+training_options:
+  resume: true
+
+wandb:
+  project: "sjepa-pretrain"
+  name: "pretrain_NTU120_XViewSafe"

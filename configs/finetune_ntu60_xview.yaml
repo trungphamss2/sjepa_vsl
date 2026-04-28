@@ -1,0 +1,41 @@
+# S-JEPA Finetune — NTU-60 | X-View Protocol
+# Sử dụng Foundation Model PRETRAINED trên NTU-120 (400 epochs)
+task: "NTU-60 Action Classification - Cross View"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgbd_skeletons_s001_to_s017/nturgb+d_skeletons"   # Giữ nguyên để Finetune trên NTU-60
+  max_frames: 120
+  protocol: "xview"
+  modality: "joint"   # ← đổi thành 'bone' hoặc 'velocity' khi finetune luồng khác
+
+model:
+  num_classes: 60                                    # Đích đến vẫn là 60 hành động
+  embed_dim: 256                                     # 256
+  segment_length: 4
+  # QUAN TRỌNG: Trỏ tới Checkpoint NTU-120 vừa train xong
+  pretrained_path: "checkpoints/pretrain_ntu120_foundation/sjepa_pro_ep400.pth"
+  dropout: 0.5
+  min_pretrained_match_ratio: 0.9
+
+training:
+  epochs: 100
+  batch_size: 64
+  grad_accum_steps: 4  # Effective batch size = 256 (64 x 4)
+  lr: 3.0e-4
+  final_lr: 1.0e-5
+  layer_decay: 0.75      # Giữ nguyên Layer Decay cực quan trọng này
+  weight_decay: 0.05
+  label_smoothing: 0.1   
+  drop_path: 0.2         # Giữ 0.2 để tăng tính bền vững (robustness) cho Encoder
+  save_every: 10
+  warmup_epochs: 5            
+  no_aug_last_epochs: 20      # ← Chìa khóa để bứt phá Acc ở giai đoạn cuối
+  early_stopping_patience: 0  
+  num_workers: 8
+  pin_memory: true
+
+wandb:
+  project: "ntu-classifier"
+  name: "finetune_NTU60_XView_from_NTU120_ep400"

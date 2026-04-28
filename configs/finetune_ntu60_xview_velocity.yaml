@@ -1,0 +1,41 @@
+# S-JEPA Finetune — NTU-60 | X-View Protocol | LUỒNG VẬN TỐC (VELOCITY) v2
+# CÁCH CHẠY: python main.py --mode finetune --config configs/finetune_ntu60_xview_velocity.yaml
+task: "NTU-60 Action Classification - Cross View - VELOCITY Stream"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"   # CHỈ NTU-60
+  max_frames: 120
+  protocol: "xview"
+  modality: "velocity"   # ← LUỒNG VẬN TỐC
+
+model:
+  num_classes: 60
+  embed_dim: 256
+  segment_length: 4
+  pretrained_path: "checkpoints_finetuned/finetune_NTU60_XView/best.pth"
+  dropout: 0.3              # Giảm từ 0.5 → 0.3: Velocity cần học nhiều hơn, ít bị chặn hơn
+  min_pretrained_match_ratio: 0.7
+
+training:
+  epochs: 100               # Tăng từ 50 → 100: Velocity cần nhiều thời gian thích nghi hơn
+  batch_size: 64
+  grad_accum_steps: 4
+  lr: 1.0e-4                # Tăng từ 5e-5 → 1e-4: Nguyên nhân chính khiến lần trước thất bại
+  final_lr: 1.0e-6
+  layer_decay: 0.75
+  weight_decay: 0.05
+  label_smoothing: 0.1
+  drop_path: 0.1
+  mixup: 0.5                # Tăng từ 0.3 → 0.5: Velocity data nhiễu → cần Mixup mạnh hơn
+  save_every: 10
+  warmup_epochs: 5          # Tăng từ 2 → 5: Warmup dài hơn cho LR cao hơn
+  no_aug_last_epochs: 0     # Tắt No-Aug: tránh lặp lỗi overfitting cuối như Joint
+  early_stopping_patience: 0
+  num_workers: 8
+  pin_memory: true
+
+wandb:
+  project: "ntu-classifier"
+  name: "finetune_NTU60_XView_velocity_v2"

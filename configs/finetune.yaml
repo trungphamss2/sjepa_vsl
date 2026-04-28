@@ -1,0 +1,38 @@
+# S-JEPA Finetuning Configuration — DEFAULT (template)
+# Dùng file này làm tham chiếu. Để chạy thực tế, dùng các file:
+#   finetune_ntu60_xsub.yaml / finetune_ntu60_xview.yaml
+#   finetune_ntu120_xsub.yaml / finetune_ntu120_xset.yaml
+task: "NTU-120 Action Classification"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"
+    - "./DATA/nturgb+d120_skeletons"
+  max_frames: 120
+  protocol: "xsub"
+
+model:
+  num_classes: 120
+  embed_dim: 256
+  segment_length: 4
+  pretrained_path: "checkpoints/pretrain_ntu120_xsub/sjepa_pro_ep300.pth"
+  dropout: 0.0
+  min_pretrained_match_ratio: 0.9
+
+training:
+  epochs: 100
+  batch_size: 64
+  grad_accum_steps: 4    # Effective batch size = 256
+  lr: 3.0e-4
+  final_lr: 1.0e-5
+  layer_decay: 0.75      # Layer-wise LR decay — đúng bài báo
+  weight_decay: 0.05
+  save_every: 10
+  early_stopping_patience: 0
+  num_workers: 8
+  pin_memory: true
+
+wandb:
+  project: "ntu-classifier"
+  name: "finetune_NTU120_XSub"

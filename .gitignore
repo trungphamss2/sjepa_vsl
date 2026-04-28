@@ -1,0 +1,26 @@
+# Data and Model Checkpoints
+DATA/
+checkpoints/
+checkpoints_finetuned/
+*.pth
+*.pt
+*.npy
+
+# Python clutter
+__pycache__/
+*.py[cod]
+*$py.class
+*.venv/
+env/
+venv/
+.env
+
+# Monitoring and IDEs
+wandb/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# OS clutter
+.DS_Store
+Thumbs.db

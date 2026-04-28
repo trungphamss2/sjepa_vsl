@@ -1,0 +1,45 @@
+# S-JEPA Finetune — NTU-60 | X-View Protocol | LUỒNG XƯƠNG (BONE)
+# CÁCH CHẠY: python main.py --mode finetune --config configs/finetune_ntu60_xview_bone.yaml
+#
+# LƯU Ý: Trước khi chạy, copy file best.pth từ Joint sang pretrained_path bên dưới!
+#   cp checkpoints_finetuned/finetune_NTU60_XView/best.pth checkpoints_finetuned/finetune_NTU60_XView/best_joint.pth
+task: "NTU-60 Action Classification - Cross View - BONE Stream"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"   # CHỈ NTU-60
+  max_frames: 120
+  protocol: "xview"
+  modality: "bone"   # ← LUỒNG XƯƠNG
+
+model:
+  num_classes: 60
+  embed_dim: 256
+  segment_length: 4
+  # ↓ Dùng trọng số Joint đã train xong làm điểm khởi đầu (Clone Trọng Số Chéo)
+  pretrained_path: "checkpoints_finetuned/finetune_NTU60_XView/best.pth"
+  dropout: 0.5
+  min_pretrained_match_ratio: 0.7   # Thả lỏng hơn vì load từ classifier, không phải pretrain
+
+training:
+  epochs: 50             # Chỉ cần 50 epochs — Joint đã trang bị tri thức nền rồi
+  batch_size: 64
+  grad_accum_steps: 4
+  lr: 5.0e-5             # LR rất thấp để "bảo toàn mỏ neo" từ Joint
+  final_lr: 1.0e-6
+  layer_decay: 0.75
+  weight_decay: 0.05
+  label_smoothing: 0.1
+  drop_path: 0.1         # Giảm Drop Path để ổn định hội tụ nhanh
+  mixup: 0.3             # Mixup nhẹ thôi, không ngấm quá mạnh
+  save_every: 10
+  warmup_epochs: 2
+  no_aug_last_epochs: 10  # Tắt aug ở 10 epoch cuối (50 epochs ngắn → 10 cuối)
+  early_stopping_patience: 0
+  num_workers: 8
+  pin_memory: true
+
+wandb:
+  project: "ntu-classifier"
+  name: "finetune_NTU60_XView_bone"

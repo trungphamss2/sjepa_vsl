@@ -1,0 +1,35 @@
+# S-JEPA Finetune — NTU-60 | X-Sub Protocol
+task: "NTU-60 Action Classification - Cross Subject"
+device: "cuda"
+
+data:
+  paths:
+    - "./DATA/nturgb+d_skeletons"   # CHỈ NTU-60
+  max_frames: 120
+  protocol: "xsub"
+
+model:
+  num_classes: 60                                    # NTU-60 có 60 hành động
+  embed_dim: 256
+  segment_length: 4
+  pretrained_path: "checkpoints/pretrain_ntu60_xsub/sjepa_pro_ep300.pth"
+  dropout: 0.0
+  min_pretrained_match_ratio: 0.9
+
+training:
+  epochs: 100
+  batch_size: 64
+  grad_accum_steps: 4    # Effective batch size = 256
+  lr: 3.0e-4
+  final_lr: 1.0e-5
+  layer_decay: 0.75      # Đúng bài báo: lr_i = base_lr × 0.75^(8-i)
+  weight_decay: 0.05
+  save_every: 10
+  warmup_epochs: 5            # Đúng bài báo S-JEPA: 5 warmup epochs
+  early_stopping_patience: 0   # 0 = tắt early stop, chạy đủ 100 epochs như paper
+  num_workers: 8
+  pin_memory: true
+
+wandb:
+  project: "ntu-classifier"
+  name: "finetune_NTU60_XSub"
